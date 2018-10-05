@@ -1,0 +1,165 @@
+@extends('layouts.master')
+
+@section('content')
+<div class="row">
+<div class="col-md-6 col-xs-12">
+			<!-- <div class="progress">
+				<div class="progress-bar progress-bar-primary progress-bar-striped active" role="progressbar" aria-valuenow="{{$sold}}" aria-valuemin="0" aria-valuemax="278" style="width: {{(float)$sold/2.78}}%">
+					{{$sold}} / 278 tickets sold
+				</div>
+			</div> -->
+
+
+<?php $user = Auth::user(); ?>
+@if ($user && $user->hasAdmission() && !$user->hasSeat())
+<div class="alert alert-info" role="alert"><strong>Heads up!</strong> It looks like you have entered your ticket number but have not yet chosen a seat. Please do so by <a href="{{URL::action('SeatController@getSeating')}}">clicking here</a>.</div>
+@endif
+
+@if (Entrust::can('entries_edit'))
+{{Form::open(['action'=>'HomeController@postEntry'])}}
+<div class="panel panel-primary">
+  <div class="panel-heading"><h4 class="panel-title"><a data-toggle="collapse" href="#collapsePostNewEntry">Post new entry</a></h4></div>
+  <div id="collapsePostNewEntry" class="panel-collapse collapse">
+  <div class="panel-body">
+    <div class="media">
+      <a class="pull-left" href="#">
+        <img src="img/aaulan-square.png" style="width:100px;height:100px;" class="media-object">
+      </a>
+    
+      <div class="media-body">
+        <h4 class="media-heading">{{Form::text('title','',['class'=>'form-control','placeholder'=>'Title'])}}</h4>
+        <div class="form-group">{{Form::textarea('body','',['class'=>'form-control','placeholder'=>'Body'])}}
+          <span class="help-block">Markdown syntax supported.</span></div>
+        <div class="form-group">
+          <button class="btn btn-success">Submit</button>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+</div>
+{{Form::close()}}
+@endif
+<!-- <div class="panel panel-default">
+<div class="panel-heading">
+  <h4 class="panel-title">Traffic graph of this LAN-party</h4>
+</div>
+<div class="panel-body">
+	<img src="{{asset('traffic.png')}}" class="img-responsive center-block" />
+</div>
+
+</div> -->
+
+
+@if (count($winners) > 0)
+<div class="panel panel-default">
+<div class="panel-heading">
+  <h4 class="panel-title">Winners of this LAN-party</h4>
+</div>
+<div id="carousel-winners" class="carousel slide" data-ride="carousel">
+
+  <!-- Wrapper for slides -->
+  <div class="carousel-inner">
+
+  @foreach ($winners as $index => $winner)
+
+    <div class="item @if ($index == 0) active@endif">
+      <img src="{{asset('uploads/winners/'.$winner->filename)}}" alt="{{$winner->game}} - {{$winner->place}}. place to {{$winner->team_name}}">
+      
+    </div>
+  @endforeach
+    
+  </div>
+
+  <!-- Controls -->
+  <a class="left carousel-control" href="#carousel-winners" role="button" data-slide="prev">
+    <span class="glyphicon glyphicon-chevron-left"></span>
+  </a>
+  <a class="right carousel-control" href="#carousel-winners" role="button" data-slide="next">
+    <span class="glyphicon glyphicon-chevron-right"></span>
+  </a>
+</div>
+
+
+
+
+
+</div>
+
+@endif
+
+
+@foreach ($entries as $entry)
+
+<div class="panel panel-default">
+  <div class="panel-body">
+    <div class="media">
+      <a class="pull-left" href="#">
+        <img src="img/aaulan-square.png" style="width:100px;height:100px;" class="media-object">
+      </a>
+    
+      <div class="media-body">
+        <h4 class="media-heading">{{$entry->title}}</h4>
+        <p>{{Markdown::render($entry->body)}}</p>
+      </div>
+    </div>
+  </div>
+  <div class="panel-footer">Posted at {{$entry->created_at->format('j/m-Y H:i')}} by <a href="{{URL::action('UserController@getShowProfile',$entry->user->slugOrId())}}">{{$entry->user->name}}</a></div>
+</div>
+
+@endforeach
+
+@if ($lan)
+<div class="jumbotron">
+<h2>Next LAN</h2>
+<p>Next LAN will be at
+@if ($lan->opens->month == $lan->closes->month)
+	{{$lan->opens->day}} &ndash; {{$lan->closes->format('j/m-Y')}}.<br />
+@else
+	{{$lan->opens->format('j/m')}} &ndash; {{$lan->closes->format('j/m-Y')}}.<br />
+@endif Tickets are DKK {{$lan->price_member}} (DKK {{$lan->price_nonmember}} for non-members) and are available at <a href="{{$lan->ticket_link}}">Studentersamfundets WEBSHOP</a>.</p>
+</div>
+@endif
+
+</div>
+<div class="col-md-6 col-xs-12">
+
+<div class="panel panel-default">
+  <div class="panel-heading"><h4 class="panel-title">Our sponsors who make this event possible:</h4></div>
+  <div class="panel-body">
+	  <?php $i = 0; ?>
+@foreach ($sponsors as $sponsor)
+@if ($i++) <hr /> @endif
+	<div class="media">
+      <a class="pull-left" href="{{empty($sponsor->link)?'#':$sponsor->link}}" rel="nofollow" target="_blank">
+        <img src="{{asset('sponsor/'.$sponsor->logo)}}" style="width:200px;" class="media-object">
+      </a>
+    
+      <div class="media-body">
+		<h4 class="media-heading">{{$sponsor->name}}</h4>
+		{{Markdown::render($sponsor->gift)}}
+@if (!empty($sponsor->link))
+	<a href="{{$sponsor->link}}" class="btn btn-primary btn-sm" rel="nofollow" target="_blank">Visit {{$sponsor->name}}</a>
+@endif
+      </div>
+    </div>
+@endforeach
+  </div>
+
+
+</div>
+
+<div class="panel panel-default">
+  <div class="panel-heading">
+    <h4 class="panel-title">Discord</h4>
+  </div>
+  <div class="panel-body">
+    <iframe src="https://discordapp.com/widget?id=228544791078633472&theme=dark" width="100%" height="500" allowtransparency="true" frameborder="0"></iframe>
+  </div>
+
+</div>
+</div>
+
+@stop
